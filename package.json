@@ -1,0 +1,10 @@
+{
+  "name": "sleep-trend-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Log nightly sleep, chart each month and compare trends between months.",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test test/"
+  }
+}
