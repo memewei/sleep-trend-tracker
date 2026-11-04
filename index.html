@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sleep Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>Sleep tracker</h1>
+    <nav class="tabs" aria-label="Views">
+      <button id="tab-month" type="button" aria-pressed="true">Month</button>
+      <button id="tab-compare" type="button" aria-pressed="false">Compare months</button>
+      <button id="tab-insights" type="button" aria-pressed="false">Insights</button>
+    </nav>
+    <label class="nap-toggle">
+      <input id="include-naps" type="checkbox" role="switch">
+      Include naps
+    </label>
+    <div class="backup">
+      <span id="save-status" class="save-status" role="status"></span>
+      <button id="export" type="button">Export</button>
+      <button id="import" type="button">Import</button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <p id="notice" class="notice" role="status" hidden></p>
+
+  <main>
+    <section id="month-view">
+      <div class="month-bar">
+        <button id="prev-month" type="button" aria-label="Previous month">‹</button>
+        <h2 id="month-title" aria-live="polite"></h2>
+        <button id="next-month" type="button" aria-label="Next month">›</button>
+        <button id="this-month" type="button">This month</button>
+      </div>
+
+      <div id="tiles" class="tiles"></div>
+
+      <div class="card">
+        <p class="chart-note"><span class="guide-key"></span>Red lines mark 7 and 9 hours. Click an X cell to toggle a habit, or anywhere else on a day to edit it.</p>
+        <div id="month-chart" class="chart-scroll"></div>
+      </div>
+
+      <div class="card">
+        <h3>Daily log</h3>
+        <p class="chart-note">Log each night under the date you woke up. On an empty row, drag across the bar to draw the night. Then drag <span class="key-dot key-dot-start"></span>sleep start or <span class="key-dot key-dot-wake"></span>wake to adjust it in 15-minute steps. For 5-minute steps, use the arrow keys after dragging. Hours follow the times, so type over them if you slept less than that, or clear the box to go back to the calculated value.</p>
+        <p id="nap-note" class="chart-note" hidden>Log a nap on the date it happened. Nap time is added to that date's sleep hours on the charts and in the averages. The Hours box still shows the night alone.</p>
+        <p id="entry-status" class="entry-status" role="alert"></p>
+        <div class="table-scroll">
+          <table class="data-table entry-table">
+            <thead>
+              <tr>
+                <th scope="col">Day</th>
+                <th scope="col" class="time-col">
+                  <span class="visually-hidden">Sleep time, noon to noon</span>
+                  <div class="time-axis" aria-hidden="true">
+                    <span style="left: 0%">12:00</span>
+                    <span style="left: 25%">18:00</span>
+                    <span style="left: 50%">00:00</span>
+                    <span style="left: 75%">06:00</span>
+                    <span style="left: 100%">12:00</span>
+                  </div>
+                </th>
+                <th scope="col">Start → wake</th>
+                <th scope="col">Hours</th>
+                <th scope="col">Quality</th>
+                <th scope="col" class="check">Sugar</th>
+                <th scope="col" class="check">Alcohol</th>
+                <th scope="col" class="check">Stretch</th>
+                <th scope="col" class="check">Coffee</th>
+              </tr>
+            </thead>
+            <tbody id="entry-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="compare-view" hidden>
+      <h2>Compare months</h2>
+      <p id="compare-empty" class="empty">Nothing to compare yet. Log some nights in the Month view and those months will appear here.</p>
+
+      <div id="compare-controls" class="filters">
+        <label class="metric-field">
+          <span>Show</span>
+          <select id="metric">
+            <option value="duration">Sleep hours</option>
+            <option value="quality">Sleep quality</option>
+            <option value="bedtime">Sleep start time</option>
+            <option value="wake">Wake time</option>
+          </select>
+        </label>
+        <div id="compare-months" class="chips" role="group" aria-label="Months to compare"></div>
+        <p id="compare-limit" class="chart-note" hidden>You can compare up to 6 months at once. Untick one to choose another.</p>
+      </div>
+
+      <p id="compare-pick" class="empty" hidden>Tick at least one month above.</p>
+
+      <div id="compare-results">
+        <div class="card">
+          <div id="legend" class="legend"></div>
+          <p id="compare-guide" class="chart-note"><span class="guide-key"></span>Red lines mark 7 and 9 hours.</p>
+          <div id="compare-chart" class="chart-scroll"></div>
+        </div>
+
+        <div class="card">
+          <h3>Month by month</h3>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Month</th>
+                  <th scope="col">Nights logged</th>
+                  <th scope="col">Avg sleep</th>
+                  <th scope="col">Avg quality</th>
+                  <th scope="col">Avg sleep start</th>
+                  <th scope="col">Avg wake</th>
+                  <th scope="col">Nights in 7–9 h</th>
+                  <th scope="col">Sugar days</th>
+                  <th scope="col">Alcohol days</th>
+                  <th scope="col">Stretching days</th>
+                  <th scope="col">Coffee days</th>
+                </tr>
+              </thead>
+              <tbody id="summary-body"></tbody>
+            </table>
+          </div>
+          <details class="daily-details">
+            <summary>Show daily values for the chart</summary>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead id="daily-head"></thead>
+                <tbody id="daily-body"></tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section id="insights-view" hidden>
+      <h2>Insights</h2>
+      <p id="insights-empty" class="empty">Nothing to analyse yet. Log some nights in the Month view and your patterns will appear here.</p>
+
+      <div id="insights-results">
+        <p class="chart-note insights-intro">These charts show what tends to happen together, not what causes what. Your quality score may also reflect how long you know you slept.</p>
+
+        <div class="scatter-grid">
+          <div class="card">
+            <h3>Sleep hours vs quality</h3>
+            <p id="scatter-hours-caption" class="chart-note"></p>
+            <div id="scatter-hours" class="chart-scroll"></div>
+          </div>
+          <div class="card">
+            <h3>Sleep start vs quality</h3>
+            <p id="scatter-start-caption" class="chart-note"></p>
+            <div id="scatter-start" class="chart-scroll"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>7-day trends</h3>
+          <p class="chart-note">Each point covers that day and the 6 before it, and needs at least 4 logged nights. <span class="guide-key"></span>Red lines mark 7 and 9 hours.</p>
+          <div id="rolling-chart" class="chart-scroll"></div>
+          <details class="daily-details">
+            <summary>Show the values behind these charts</summary>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col" id="insights-hours-head">Sleep</th>
+                    <th scope="col">Quality</th>
+                    <th scope="col">Sleep start</th>
+                    <th scope="col">7-day avg hours</th>
+                    <th scope="col">7-day avg quality</th>
+                    <th scope="col">Start variation</th>
+                  </tr>
+                </thead>
+                <tbody id="insights-body"></tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="tooltip" class="tooltip" hidden></div>
+
+  <script src="js/core.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/time-track.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
